@@ -39,7 +39,7 @@ Unfortunately, this method is not very efficient. So, they wanted to revamp this
 
 It&#39;s always helpful to scope the problem before starting.
 
-**Deliverable** : Trained models, automate predictions daily, Writing predictions to DB, Dynamic Dashboards.
+**Deliverable** : Trained models, Deploy Models to automate predictions daily, Writing predictions to Database, Dynamic Dashboards for visualization.
 
 **Machine learning task** : Regression
 
