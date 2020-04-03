@@ -1,6 +1,6 @@
 # Future Power Usage and weather impact on sales prediction
 
-This repo contains py and batch files for a data science regression project aimed at building a machine learning model that can predict future 6-Day power usage for different industrial sectors/ rate segments of a utility company serving 10M customers. This project also involves building a ML model that can predict weather impact on monthly sales.
+This repo contains py files for a data science regression project aimed at building a machine learning model that can predict future 6-Day power usage for different industrial sectors/ rate segments of a utility company serving 10M customers. This project also involves building a ML model that can predict monthly weather impact on sales.
 
 The code in the notebooks was written in python; the following python libraries were used throughout the project:
 
@@ -31,7 +31,7 @@ I&#39;ve to find a data-driven approach to predict usage and weather impact
 
 # Current Solution
 
-Company currently uses previous years usage data for the day as the estimate.
+Company currently uses previous years usage data for any given day and number of new customers to canculate an estimate.
 
 Unfortunately, this method is not very efficient. So, they wanted to revamp this process and make use of ML to make better predictions and know weather impact on sales.
 
@@ -39,7 +39,7 @@ Unfortunately, this method is not very efficient. So, they wanted to revamp this
 
 It&#39;s always helpful to scope the problem before starting.
 
-**Deliverable** : Trained models, Deploy Models to automate predictions daily, Writing predictions to Database, Dynamic Dashboards for visualization.
+**Deliverable** : Trained models, Deploy final models to automate predictions daily, Writing predictions to Database, Dynamic Tableau Dashboards for visualization, Feature Importance
 
 **Machine learning task** : Regression
 
