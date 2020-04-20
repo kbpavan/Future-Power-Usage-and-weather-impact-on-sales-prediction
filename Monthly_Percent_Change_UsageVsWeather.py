@@ -101,7 +101,7 @@ for z in sheet_names:
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
 
-################################################Writing Predictions to SAP HANA Table "MonthlyWeatherImpact"#################
+################################################Writing Predictions to SAP HANA Table "Masked"#################
 AllSectors_Combined = pd.DataFrame()
 for z in sheet_names:
           onesectordata =  pd.read_excel("Masked",sheet_name = z, dtype={0: str} )
