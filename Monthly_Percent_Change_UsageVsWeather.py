@@ -10,14 +10,14 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 
-sheet_names = ['RESIDENTIAL','RES_OK131_5', 'RES_TimeOfUse','RES_VariablePeakPricing',"RES_GuaranteedFlatBill","COMMERCIAL","COM_TimeOfUse", "COM_Standard","COM_VariablePeakPricing","COM_Residential","OIL","Industrial","Public_Authority"]
+sheet_names = ["Masked", "Masked",...........]
 # Create a Pandas Excel writer using XlsxWriter as the engine.
-writer = pd.ExcelWriter('**\\Utility Commercial Services\\2019\\Analyze Projects\\Weather Impact\\%ChangeInUsage_DuetoWeather_Predictions.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter('Masked', engine='xlsxwriter')
 
 #Reading data
 for z in sheet_names:
       
-    weather_stn_Sensitive =  pd.read_excel("**\\Utility Commercial Services\\2019\\Analyze Projects\\Weather Impact\\Usage&_weather_SQL_Data_AllWeatherParameters.xlsx", converters= {'Weather_Reading_Dt': pd.to_datetime}, sheet_name = z)
+    weather_stn_Sensitive =  pd.read_excel("Masked", converters= {'Weather_Reading_Dt': pd.to_datetime}, sheet_name = z)
     
     weather_stn_Sensitive.index = weather_stn_Sensitive['Weather_Reading_Dt']
     
@@ -100,5 +100,36 @@ for z in sheet_names:
 
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
+
+################################################Writing Predictions to SAP HANA Table "MonthlyWeatherImpact"#################
+AllSectors_Combined = pd.DataFrame()
+for z in sheet_names:
+          onesectordata =  pd.read_excel("Masked",sheet_name = z, dtype={0: str} )
+          onesectordata.iloc[:,0] = z
+          AllSectors_Combined = AllSectors_Combined.append(onesectordata)       
+AllSectors_Combined.rename(columns={"Unnamed: 0": "Sector&RateClass"}, inplace = True)
+AllSectors_Combined.fillna(value= 0 , inplace=True)
+
+AllSectors_Combined['year'] = pd.DatetimeIndex(AllSectors_Combined['METER_READING_DATE']).year
+AllSectors_Combined['month'] = pd.DatetimeIndex(AllSectors_Combined['METER_READING_DATE']).month
+AllSectors_Combined = AllSectors_Combined.iloc[:,[0,8,9,2,3,4,5,6,7]]
+
+
+connection = dbapi.connect(address='Masked', port=Masked, user='Masked', password='Masked')
+# create cursor
+cursor=connection.cursor()  
+cursor.execute('TRUNCATE TABLE Masked')        
+
+for i,row in AllSectors_Combined.iterrows():
+      
+    sql = "INSERT INTO Masked  VALUES ("+"?,"*(len(row)-1)+"?)"
+    
+    cursor.execute(sql, tuple(row))
+
+    connection.commit()
+    
+connection.close()
+
 exit()
+
 
