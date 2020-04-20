@@ -28,18 +28,18 @@ import teradata
 #Connecting to Teradata Database
 udaExec = teradata.UdaExec(appName="Automate_Future_Usage_Prediction_SQL", version="1.0", logConsole=True)
 
-with udaExec.connect(method="odbc", system="TD1", username="**", password="**", authentication="**") as connect:
+with udaExec.connect(method="Masked", system="Masked", username="**", password="**", authentication="**") as connect:
  
     #Queries to get data from Teradata
     Future_6Day_Weather_Query = "select Weather_Reading_Dt , avg(relativeHumidity) as avgRelativeHumidity , avg(windSpeed) as avgWindSpeed, max(temperature) as maxTemperature, avg(tenYrNormalMaxTemperature) as tenYrNormalMaxTemperature \
-                                 from  WEATHER_READINGS_HOURLY_TABLE A \
-                                 INNER JOIN  (SELECT  CAST( Reading_Dttm AS DATE) AS Reading_Dttm, Weather_Reading_Meas AS tenYrNormalMaxTemperature FROM  WEATHER_READINGS_TABLE where Weather_Reading_Interval = 'DAILY' AND  Weather_Reading_Type_Cd IN ('tenYrNormalMaxTemperature')  and CAST( Reading_Dttm AS DATE) > CAST( CURRENT_TIMESTAMP AS DATE)  AND Weather_site_id = 'KOKC') B \
+                                 from  Masked A \
+                                 INNER JOIN  (SELECT  CAST( Reading_Dttm AS DATE) AS Reading_Dttm, Weather_Reading_Meas AS tenYrNormalMaxTemperature FROM  Masked where Weather_Reading_Interval = 'DAILY' AND  Weather_Reading_Type_Cd IN ('tenYrNormalMaxTemperature')  and CAST( Reading_Dttm AS DATE) > CAST( CURRENT_TIMESTAMP AS DATE)  AND Weather_site_id = 'KOKC') B \
                                  on A.Weather_Reading_Dt = B.Reading_Dttm \
                                  where  weather_reading_dt  > CAST( CURRENT_TIMESTAMP AS DATE) AND STATION_ID = 'KOKC' AND OBSERVE_TYPE = 'FORECASTED'  \
                                  group by Weather_Reading_Dt ORDER BY Weather_Reading_Dt;"
     Previous_3Day_Weather_Query = "select Weather_Reading_Dt , avg(relativeHumidity) as avgRelativeHumidity , avg(windSpeed) as avgWindSpeed, max(temperature) as maxTemperature, avg(tenYrNormalMaxTemperature) as tenYrNormalMaxTemperature \
-                                  from  WEATHER_READINGS_HOURLY_TABLE A \
-                                  INNER JOIN (SELECT  CAST( Reading_Dttm AS DATE) AS Reading_Dttm, Weather_Reading_Meas AS tenYrNormalMaxTemperature  FROM    WEATHER_READINGS_TABLE where Weather_Reading_Interval = 'DAILY' AND  Weather_Reading_Type_Cd IN ('tenYrNormalMaxTemperature') and CAST( Reading_Dttm AS DATE) > CURRENT_DATE - interval '4' day  AND Weather_site_id = 'KOKC') B \
+                                  from  Masked A \
+                                  INNER JOIN (SELECT  CAST( Reading_Dttm AS DATE) AS Reading_Dttm, Weather_Reading_Meas AS tenYrNormalMaxTemperature  FROM    Masked where Weather_Reading_Interval = 'DAILY' AND  Weather_Reading_Type_Cd IN ('tenYrNormalMaxTemperature') and CAST( Reading_Dttm AS DATE) > CURRENT_DATE - interval '4' day  AND Weather_site_id = 'KOKC') B \
                                   on A.Weather_Reading_Dt = B.Reading_Dttm \
                                   where  weather_reading_dt  > CURRENT_DATE - interval '4' day  AND STATION_ID = 'KOKC' AND OBSERVE_TYPE = 'OBSERVED'  \
                                   group by Weather_Reading_Dt ORDER BY Weather_Reading_Dt;"
@@ -63,12 +63,12 @@ WeatherData['lagtemp3'] = WeatherData['maxTemperature'].shift(3)
 WeatherData = WeatherData.dropna()
 
 
-sheet_names = ['RESIDENTIAL','RES_OK131_5', 'RES_TimeOfUse','RES_VariablePeakPricing',"RES_GuaranteedFlatBill","COMMERCIAL","COM_TimeOfUse", "COM_Standard","COM_VariablePeakPricing","COM_Residential"]
+sheet_names = ["Masked","Masked","Masked",................]
 # Create a Pandas Excel writer using XlsxWriter as the engine.
-writer = pd.ExcelWriter('**\\Utility Commercial Services\\2019\\Analyze Projects\\Weather Impact\\Future_6Day_Usage_Predictions.xlsx', engine='xlsxwriter')
+writer = pd.ExcelWriter('Masked', engine='xlsxwriter')
 for z in sheet_names:
     #Reading data
-    weather_stn_Sensitive = pd.read_excel("H:\\Utility Commercial Services\\2019\\Analyze Projects\\Weather Impact\\Usage&_weather_SQL_Data_AllWeatherParameters.xlsx", converters= {'METER_READING_DATE': pd.to_datetime}, sheet_name = z)
+    weather_stn_Sensitive = pd.read_excel("Masked", converters= {'METER_READING_DATE': pd.to_datetime}, sheet_name = z)
     weather_stn_Sensitive['day_of_week'] = weather_stn_Sensitive['Weather_Reading_Dt'].dt.day_name()
     weather_stn_Sensitive.index = weather_stn_Sensitive['Weather_Reading_Dt']
     weather_stn_Sensitive['Weekends'] = [ 1 if  a == 'Saturday' or a == 'Sunday' else 0 for a in weather_stn_Sensitive['day_of_week'] ]
@@ -129,7 +129,35 @@ for z in sheet_names:
     concat.to_excel(writer, sheet_name= z)
 # Close the Pandas Excel writer and output the Excel file.
 writer.save()
-exit()
+
+#######################################Writing Predictions to SAP HANA table "Masked" ##############
+
+AllSectors_Combined = pd.DataFrame()
+for z in sheet_names:
+          onesectordata =  pd.read_excel("Masked",sheet_name = z )
+          onesectordata['Sector&RateClass'] = z
+          onesectordata['Prediction_Date'] = date.today()
+          AllSectors_Combined = AllSectors_Combined.append(onesectordata)  
+          
+AllSectors_Combined['WEATHER_READING_DT'] = AllSectors_Combined['WEATHER_READING_DT'].apply(lambda x: x.date())
+AllSectors_Combined['AVGRELATIVEHUMIDITY'] = AllSectors_Combined['AVGRELATIVEHUMIDITY'].apply(lambda x: int(x))
+AllSectors_Combined['AVGWINDSPEED'] = AllSectors_Combined['AVGWINDSPEED'].apply(lambda x: int(x))
+AllSectors_Combined = AllSectors_Combined.iloc[:,[-2,-1,0,1,2,3,4,5,6,7,8,9]]
+
+
+connection = dbapi.connect(address='Masked', port=Masked, user='Masked', password='Masked')
+# create cursor
+cursor=connection.cursor()  
+#cursor.execute('TRUNCATE TABLE Masked')        
+
+for i,row in AllSectors_Combined.iterrows():
+    sql = "INSERT INTO Masked  VALUES ("+"?,"*(len(row)-1)+"?)"
+    
+    cursor.execute(sql, tuple(row))
+
+    connection.commit()
+    
+connection.close()    
 
 # ============================================Plots-EDA=================================
 # sns.scatterplot(winter['maxTemperature'],winter['Consumption_Usage'])
